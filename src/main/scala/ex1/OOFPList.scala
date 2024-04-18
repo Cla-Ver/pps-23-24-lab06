@@ -1,5 +1,7 @@
 package ex1
 
+import scala.collection.View.Collect
+
 // List as a pure interface
 enum List[A]:
   case ::(h: A, t: List[A])
@@ -53,9 +55,12 @@ enum List[A]:
   def length(): Int = foldLeft(0)((a, b) => a + 1)
   def zipWithIndex: List[(A, Int)] = foldLeft(Nil())((b, a) => b.append(List((a, b.length()))))
   def partition(predicate: A => Boolean): (List[A], List[A]) = foldLeft((Nil(), Nil()))((b, a) => if predicate(a) then (b._1.append(List(a)), b._2) else (b._1, b._2.append(List(a))))
-  def span(predicate: A => Boolean): (List[A], List[A]) = foldRight((Nil(), Nil()))((a, b) => if predicate(a) then (b._1.append(List(a)), b._2) else {(b._1, b._2.append(List(a))) :: this.tail.span(_ => false)})
-  def takeRight(n: Int): List[A] = ???
-  def collect(predicate: PartialFunction[A, A]): List[A] = ???
+  def span(predicate: A => Boolean): (List[A], List[A]) = foldLeft((Nil(), Nil()))((b, a) => if predicate(a) && b._2.length() == 0 then (b._1.append(List(a)), b._2) else (b._1, b._2.append(List(a))))
+  def takeRight(n: Int): List[A] = n match
+    case n if this.tail.isDefined && n > this.tail.get.length() => this.tail.get.takeRight(n-1)
+    case _ if this.tail.isDefined => this.tail.get
+    case _ => Nil()
+  def collect(predicate: PartialFunction[A, A]): List[A] = foldLeft(Nil())((b, a) => if predicate.isDefinedAt(a) then b.append(List(predicate(a))) else b.append(Nil()))
 // Factories
 object List:
 
@@ -71,13 +76,13 @@ object Test extends App:
 
   import List.*
   val reference = List(1, 2, 3, 4)
-  //println(reference.zipWithValue(10)) // List((1, 10), (2, 10), (3, 10), (4, 10))
+  println(reference.zipWithValue(10)) // List((1, 10), (2, 10), (3, 10), (4, 10))
   //println(reference.length())
   //println(reference.zipWithIndex) // List((1, 0), (2, 1), (3, 2), (4, 3))
   //println(reference.partition(_ % 2 == 0)) // (List(2, 4), List(1, 3))
-  println(reference.span(_ % 2 != 0)) // (List(1), List(2, 3, 4))
-  println(reference.span(_ < 3)) // (List(1, 2), List(3, 4))
-  /*println(reference.reduce(_ + _)) // 10
-  println(List(10).reduce(_ + _)) // 10
+  //println(reference.span(_ % 2 != 0)) // (List(1), List(2, 3, 4))
+  //println(reference.span(_ < 3)) // (List(1, 2), List(3, 4))
+  //println(reference.reduce(_ + _)) // 10
+  //println(List(10).reduce(_ + _)) // 10
   println(reference.takeRight(3)) // List(2, 3, 4)
-  println(reference.collect { case x if x % 2 == 0 => x + 1 }) // List(3, 5)*/
+  //println(reference.collect { case x if x % 2 == 0 => x + 1 }) // List(3, 5)
